@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/lpmi-13/sigmacli"
-	"github.com/lpmi-13/sigmacli/commands/displayers"
-	"github.com/lpmi-13/sigmacli/do"
+	"github.com/lpmi-13/sigmactl"
+	"github.com/lpmi-13/sigmactl/commands/displayers"
+	"github.com/lpmi-13/sigmactl/cs"
 	"github.com/spf13/viper"
 )
 
 // this is the base command configuration
 type CmdConfig struct {
 	NS      string
-	Sigmait sigmacli.Config
+	Sigmait sigmactl.Config
 	Out     io.Writer
 	Args    []string
 
@@ -28,7 +28,7 @@ type CmdConfig struct {
 }
 
 // This creates an instance of a CmdConfig
-func NewCmdConfig(ns string, sc sigmacli.Config, out io.Writer, args []string, initGodo bool) (*CmdConfig, error) {
+func NewCmdConfig(ns string, sc sigmactl.Config, out io.Writer, args []string, initGosc bool) (*CmdConfig, error) {
 
 	cmdConfig := &CmdConfig{
 		NS:      ns,
@@ -38,13 +38,13 @@ func NewCmdConfig(ns string, sc sigmacli.Config, out io.Writer, args []string, i
 
 		initServices: func(c *CmdConfig) error {
 			password := c.getContextPassword()
-			godoClient, err := c.Sigmait.GetGodoClient(Trace, password)
+			goscClient, err := c.Sigmait.GetGoscClient(Trace, password)
 			if err != nil {
 				return fmt.Errorf("Unable to initialise Cloud Sigma API client: %s", err)
 			}
-			c.Regions = func() sigma.RegionsService { return sigma.NewRegionsService(godoClient) }
-			c.Server = func() sigma.ServerService { return sigma.NewServerService(godoClient) }
-			c.Balance = func() sigma.BalanceService { return sigma.NewBalanceService(godoClient) }
+			c.Regions = func() sigma.RegionsService { return sigma.NewRegionsService(goscClient) }
+			c.Server = func() sigma.ServerService { return sigma.NewServerService(goscClient) }
+			c.Balance = func() sigma.BalanceService { return sigma.NewBalanceService(goscClient) }
 
 			return nil
 		},
@@ -57,8 +57,8 @@ func NewCmdConfig(ns string, sc sigmacli.Config, out io.Writer, args []string, i
 			password := ""
 
 			switch context {
-			case sigmacli.ArgDefaultContext:
-				password = viper.GetString(sigmacli.ArgPassword)
+			case sigmactl.ArgDefaultContext:
+				password = viper.GetString(sigmactl.ArgPassword)
 			default:
 				contexts := viper.GetStringMapString("auth-contexts")
 
@@ -76,8 +76,8 @@ func NewCmdConfig(ns string, sc sigmacli.Config, out io.Writer, args []string, i
 			}
 
 			switch context {
-			case sigmacli.ArgDefaultContext:
-				viper.Set(sigmacli.ArgPassword, password)
+			case sigmactl.ArgDefaultContext:
+				viper.Set(sigmactl.ArgPassword, password)
 			default:
 				contexts := viper.GetStringMapString("auth-contexts")
 				contexts[context] = password
@@ -87,7 +87,7 @@ func NewCmdConfig(ns string, sc sigmacli.Config, out io.Writer, args []string, i
 		},
 	}
 
-	if initGodo {
+	if initGosc {
 		if err := cmdConfig.initServices(cmdConfig); err != nil {
 			return nil, err
 		}
@@ -106,12 +106,12 @@ func (c *CmdConfig) Display(d displayers.Displayable) error {
 		Out:  c.Out,
 	}
 
-	columnList, err := c.Sigmait.GetStrings(c.NS, sigmacli.ArgFormat)
+	columnList, err := c.Sigmait.GetStrings(c.NS, sigmactl.ArgFormat)
 	if err != nil {
 		return err
 	}
 
-	withHeaders, err := c.Sigmait.GetBool(c.NS, sigmacli.ArgNoHeader)
+	withHeaders, err := c.Sigmait.GetBool(c.NS, sigmactl.ArgNoHeader)
 	if err != nil {
 		return err
 	}
