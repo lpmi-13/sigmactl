@@ -22,13 +22,13 @@ type CmdConfig struct {
 	setContextPassword func(string)
 
 	// actual commands per "service"
-	Regions func() sigma.RegionsService
-	Server  func() sigma.ServerService
-	Balance func() sigma.BalanceService
+	Regions func() cs.RegionsService
+	Server  func() cs.ServerService
+	Balance func() cs.BalanceService
 }
 
 // This creates an instance of a CmdConfig
-func NewCmdConfig(ns string, sc sigmactl.Config, out io.Writer, args []string, initGosc bool) (*CmdConfig, error) {
+func NewCmdConfig(ns string, sc sigmactl.Config, out io.Writer, args []string, initGocs bool) (*CmdConfig, error) {
 
 	cmdConfig := &CmdConfig{
 		NS:      ns,
@@ -38,13 +38,13 @@ func NewCmdConfig(ns string, sc sigmactl.Config, out io.Writer, args []string, i
 
 		initServices: func(c *CmdConfig) error {
 			password := c.getContextPassword()
-			goscClient, err := c.Sigmait.GetGoscClient(Trace, password)
+			gocsClient, err := c.Sigmait.GetGocsClient(Trace, password)
 			if err != nil {
 				return fmt.Errorf("Unable to initialise Cloud Sigma API client: %s", err)
 			}
-			c.Regions = func() sigma.RegionsService { return sigma.NewRegionsService(goscClient) }
-			c.Server = func() sigma.ServerService { return sigma.NewServerService(goscClient) }
-			c.Balance = func() sigma.BalanceService { return sigma.NewBalanceService(goscClient) }
+			c.Regions = func() sigma.RegionsService { return sigma.NewRegionsService(gocsClient) }
+			c.Server = func() sigma.ServerService { return sigma.NewServerService(gocsClient) }
+			c.Balance = func() sigma.BalanceService { return sigma.NewBalanceService(gocsClient) }
 
 			return nil
 		},
@@ -87,7 +87,7 @@ func NewCmdConfig(ns string, sc sigmactl.Config, out io.Writer, args []string, i
 		},
 	}
 
-	if initGosc {
+	if initGocs {
 		if err := cmdConfig.initServices(cmdConfig); err != nil {
 			return nil, err
 		}
